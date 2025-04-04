@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能数据对比系统</title>
+    <link rel="stylesheet" href="../styles/fontawesome/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --background: #f8f9fa;
+            --text: #2c3e50;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .upload-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+            background: #f8fafc;
+        }
+
+        .upload-card {
+            border: 2px dashed #d1d5db;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .upload-card:hover {
+            border-color: var(--secondary);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .file-input {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .file-input input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-icon {
+            font-size: 2.5rem;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+        }
+
+        .analyze-btn {
+            width: 220px;
+            margin: 2rem auto;
+            padding: 1rem 2rem;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .analyze-btn:hover {
+            background: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .result-section {
+            padding: 2rem;
+        }
+
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .result-table th,
+        .result-table td {
+            padding: 12px 15px;
+            border: 1px solid #f0f0f0;
+            text-align: left;
+        }
+
+        .result-table th {
+            background: var(--primary);
+            color: white;
+            position: sticky;
+            top: 0;
+            font-weight: 500;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            gap: 0.5rem;
+        }
+
+        .match { background: #e8f5e9; color: #2e7d32; }
+        .mismatch { background: #ffebee; color: #c62828; }
+        .partial-match { background: #fff3e0; color: #ef6c00; }
+        .new-record { background: #e3f2fd; color: #1565c0; }
+
+        .diff-container {
+            padding: 8px;
+            background: #fff;
+            border-radius: 6px;
+            margin: 5px 0;
+        }
+
+        .diff-row {
+            display: flex;
+            align-items: center;
+            margin: 4px 0;
+        }
+
+        .diff-label {
+            width: 80px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .diff-value {
+            flex: 1;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .diff-danger {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .diff-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--secondary);
+            display: none;
+        }
+
+        .notification {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+        .success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+
+        @media (max-width: 768px) {
+            .container { border-radius: 0; }
+            .upload-section { grid-template-columns: 1fr; padding: 1.5rem; }
+            .result-table { font-size: 0.9em; }
+            .analyze-btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<!-- 返回主页按钮 -->
+    <div style="margin-bottom: 20px;">
+        <a href="../index.html">
+            <button class="btn" style="background: #3498db; color: white; padding: 8px 16px;">
+                <i class="fas fa-arrow-left"></i> 返回主页
+            </button>
+        </a>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-file-csv"></i> 智能数据对比系统</h1>
+            <p>订单数据精准匹配与差异分析</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-card">
+                <div class="file-input">
+                    <input type="file" id="baseFile" accept=".xlsx, .xls">
+                    <i class="fas fa-file-upload file-icon"></i>
+                    <h3>基准文件</h3>
+                    <p id="baseFileName">点击或拖拽上传Excel文件</p>
+                </div>
+            </div>
+
+            <div class="upload-card">
+                <div class="file-input">
+                    <input type="file" id="compareFile" accept=".xlsx, .xls">
+                    <i class="fas fa-file-import file-icon"></i>
+                    <h3>对比文件</h3>
+                    <p id="compareFileName">点击或拖拽上传Excel文件</p>
+                </div>
+            </div>
+        </div>
+
+        <button class="analyze-btn" onclick="startAnalysis()">
+            <i class="fas fa-play"></i> 开始智能分析
+        </button>
+
+        <div class="result-section">
+            <div id="loading" class="loading">
+                <i class="fas fa-spinner fa-spin"></i> 数据分析中...
+            </div>
+
+            <div id="notification" class="notification"></div>
+
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th>订单号</th>
+                        <th>匹配状态</th>
+                        <th>详细对比</th>
+                    </tr>
+                </thead>
+                <tbody id="resultBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script>
+        const CONFIG = {
+            TARGET_FIELDS: ['订单号', '订单收款金额', '赔付金额', '兜底票新票总价'],
+            AMOUNT_TOLERANCE: 0.02,
+            SIMILARITY_THRESHOLD: 0.85,
+            FIELD_WEIGHTS: {
+                amount: 0.5,
+                compensation: 0.3,
+                total: 0.2
+            },
+            ALLOWED_TYPES: [
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            ]
+        };
+
+        class DataProcessor {
+            static sanitizeHeader(header) {
+                return header.trim()
+                    .replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '')
+                    .toLowerCase();
+            }
+
+            static parseNumber(value) {
+                const num = Number(String(value)
+                    .replace(/[^0-9.-]/g, '')
+                    .replace(/,/g, ''));
+                return isNaN(num) ? 0 : Number(num.toFixed(2));
+            }
+
+            static async parseExcel(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                            const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                            if (rawData.length < 2) throw new Error('文件数据为空');
+
+                            const headers = rawData[0].map(this.sanitizeHeader);
+                            const fieldMap = CONFIG.TARGET_FIELDS.reduce((map, field) => {
+                                const clean = this.sanitizeHeader(field);
+                                const index = headers.indexOf(clean);
+                                if (index === -1) throw new Error(`缺少字段: ${field}`);
+                                map[field] = index;
+                                return map;
+                            }, {});
+
+                            const processedData = rawData.slice(1)
+                                .filter(row => row[fieldMap['订单号']])
+                                .map(row => ({
+                                    orderId: String(row[fieldMap['订单号']]).trim(),
+                                    amount: this.parseNumber(row[fieldMap['订单收款金额']]),
+                                    compensation: this.parseNumber(row[fieldMap['赔付金额']]),
+                                    total: this.parseNumber(row[fieldMap['兜底票新票总价']])
+                                }));
+
+                            resolve(processedData.filter(item => item.orderId));
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    reader.onerror = () => reject(new Error('文件读取失败'));
+                    reader.readAsArrayBuffer(file);
+                });
+            }
+        }
+
+        class SmartComparator {
+            constructor(baseData) {
+                this.baseMap = baseData.reduce((map, item) => {
+                    if (!map.has(item.orderId)) map.set(item.orderId, []);
+                    map.get(item.orderId).push(item);
+                    return map;
+                }, new Map());
+            }
+
+            findBestMatch(compareItem) {
+                const candidates = this.baseMap.get(compareItem.orderId) || [];
+                if (candidates.length === 0) return null;
+
+                return candidates
+                    .map(baseItem => ({
+                        ...baseItem,
+                        similarity: this.calculateSimilarity(baseItem, compareItem)
+                    }))
+                    .sort((a, b) => b.similarity - a.similarity)[0];
+            }
+
+            calculateSimilarity(baseItem, compareItem) {
+                let score = 0;
+                
+                const amountDiff = Math.abs(baseItem.amount - compareItem.amount);
+                const amountSimilarity = 1 - Math.min(amountDiff / (baseItem.amount || 1), 1);
+                
+                const compensationMatch = 
+                    baseItem.compensation === compareItem.compensation ? 1 : 0;
+                
+                const totalMatch = 
+                    Math.abs(baseItem.total - compareItem.total) <= CONFIG.AMOUNT_TOLERANCE ? 1 : 0;
+
+                return (amountSimilarity * CONFIG.FIELD_WEIGHTS.amount) +
+                       (compensationMatch * CONFIG.FIELD_WEIGHTS.compensation) +
+                       (totalMatch * CONFIG.FIELD_WEIGHTS.total);
+            }
+
+            compare(compareData) {
+                return compareData.map(item => {
+                    const bestMatch = this.findBestMatch(item);
+                    if (!bestMatch) return this.createNewRecordResult(item);
+
+                    const similarity = bestMatch.similarity;
+                    const status = similarity >= CONFIG.SIMILARITY_THRESHOLD ? 
+                                 '匹配' : '低相似度差异';
+                    
+                    return {
+                        orderId: item.orderId,
+                        status,
+                        similarity,
+                        baseData: bestMatch,
+                        compareData: item,
+                        diffs: this.getDifferences(bestMatch, item)
+                    };
+                });
+            }
+
+            createNewRecordResult(item) {
+                return {
+                    orderId: item.orderId,
+                    status: '新增记录',
+                    similarity: 0,
+                    baseData: null,
+                    compareData: item,
+                    diffs: {}
+                };
+            }
+
+            getDifferences(baseItem, compareItem) {
+                const diffs = {};
+                
+                const checkDiff = (field, label) => {
+                    const baseVal = baseItem ? baseItem[field] : null;
+                    const compareVal = compareItem[field];
+                    const diff = baseItem ? Math.abs(baseVal - compareVal) : null;
+
+                    diffs[field] = {
+                        label,
+                        base: baseVal?.toFixed(2) ?? '-',
+                        compare: compareVal.toFixed(2),
+                        diff: diff?.toFixed(2) ?? '-',
+                        hasDiff: diff > CONFIG.AMOUNT_TOLERANCE
+                    };
+                };
+
+                checkDiff('amount', '订单收款金额');
+                checkDiff('compensation', '赔付金额');
+                checkDiff('total', '兜底票新票总价');
+
+                return diffs;
+            }
+        }
+
+        class UIController {
+            static elements = {
+                loading: document.getElementById('loading'),
+                notification: document.getElementById('notification'),
+                resultBody: document.getElementById('resultBody'),
+                baseFileName: document.getElementById('baseFileName'),
+                compareFileName: document.getElementById('compareFileName')
+            }
+
+            static showLoading(show) {
+                this.elements.loading.style.display = show ? 'block' : 'none';
+            }
+
+            static showNotification(message, isError = false) {
+                const notification = this.elements.notification;
+                notification.className = `notification ${isError ? 'error' : 'success'}`;
+                notification.innerHTML = message;
+                notification.style.display = 'block';
+                setTimeout(() => notification.style.display = 'none', 3000);
+            }
+
+            static updateResults(results) {
+                this.elements.resultBody.innerHTML = results.map(result => {
+                    const statusClass = this.getStatusClass(result.status);
+                    const similarity = result.status !== '新增记录' ? 
+                                    ` (${Math.round(result.similarity * 100)}%)` : '';
+                    
+                    return `
+                        <tr>
+                            <td>${result.orderId}</td>
+                            <td>
+                                <span class="status ${statusClass}">
+                                    ${result.status}${similarity}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="diff-container">
+                                    ${this.renderFieldDiff(result.diffs.amount)}
+                                    ${this.renderFieldDiff(result.diffs.compensation)}
+                                    ${this.renderFieldDiff(result.diffs.total)}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            static renderFieldDiff(diff) {
+                if (!diff) return '';
+                const diffClass = diff.hasDiff ? 'diff-danger' : 'diff-success';
+                
+                return `
+                    <div class="diff-row">
+                        <div class="diff-label">${diff.label}</div>
+                        <div class="diff-value ${diffClass}">
+                            <span title="基准值">${diff.base}</span>
+                            <i class="fas fa-arrow-right diff-arrow"></i>
+                            <span title="对比值">${diff.compare}</span>
+                            ${diff.hasDiff ? 
+                                `<span class="diff-danger" style="margin-left:8px;">Δ${diff.diff}</span>` : 
+                                ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            static getStatusClass(status) {
+                return {
+                    '匹配': 'match',
+                    '低相似度差异': 'partial-match',
+                    '新增记录': 'new-record'
+                }[status] || 'mismatch';
+            }
+
+            static updateFileDisplay(inputId, fileName) {
+                const display = document.getElementById(inputId);
+                display.textContent = fileName || '点击或拖拽上传Excel文件';
+                display.style.color = fileName ? 'var(--text)' : '#666';
+            }
+        }
+
+        async function startAnalysis() {
+            try {
+                UIController.showLoading(true);
+                UIController.elements.resultBody.innerHTML = '';
+
+                const baseFile = document.getElementById('baseFile').files[0];
+                const compareFile = document.getElementById('compareFile').files[0];
+
+                if (!baseFile || !compareFile) throw new Error('请选择两个对比文件');
+                if (!CONFIG.ALLOWED_TYPES.includes(baseFile.type) || 
+                    !CONFIG.ALLOWED_TYPES.includes(compareFile.type)) {
+                    throw new Error('仅支持Excel文件 (.xls, .xlsx)');
+                }
+
+                const [baseData, compareData] = await Promise.all([
+                    DataProcessor.parseExcel(baseFile),
+                    DataProcessor.parseExcel(compareFile)
+                ]);
+
+                if (baseData.length === 0) throw new Error('基准文件没有有效数据');
+                if (compareData.length === 0) throw new Error('对比文件没有有效数据');
+
+                const comparator = new SmartComparator(baseData);
+                const results = comparator.compare(compareData);
+
+                UIController.updateResults(results);
+                UIController.showNotification(
+                    `分析完成：共发现 ${results.filter(r => r.status !== '匹配').length} 处差异，` +
+                    `平均相似度 ${(results.reduce((sum, r) => sum + r.similarity, 0) / results.length * 100).toFixed(1)}%`
+                );
+
+            } catch (error) {
+                UIController.showNotification(`错误: ${error.message}`, true);
+                console.error('分析错误:', error);
+            } finally {
+                UIController.showLoading(false);
+            }
+        }
+
+        // 初始化文件选择
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function() {
+                const displayId = this.id + 'Name';
+                UIController.updateFileDisplay(displayId, this.files[0]?.name);
+            });
+        });
+    </script>
+</body>
+</html>

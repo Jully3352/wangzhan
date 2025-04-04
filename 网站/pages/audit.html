@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>智能订单审计系统 | 专业版</title>
+ <link rel="stylesheet" href="../styles/fontawesome/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2A3F54;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --text-color: #4A4A4A;
+        }
+
+        body {
+            margin: 0;
+            padding: 2rem;
+            font-family: 'Helvetica Neue', system-ui;
+            background: #F5F7FA;
+            color: var(--text-color);
+        }
+
+        .dashboard {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+        }
+
+        .header {
+            padding: 1.5rem 2rem;
+            background: var(--primary-color);
+            border-radius: 12px 12px 0 0;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: white;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .input-section {
+            padding: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #E0E6ED;
+            border-radius: 8px;
+            background: #F9FAFC;
+            transition: all 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            outline: none;
+        }
+
+        textarea {
+            height: 60px;
+            resize: vertical;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 1rem;
+            padding: 0 2rem 2rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #223448;
+        }
+
+        .btn-export {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-reset {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background: white;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.8rem 1.2rem;
+            text-align: left;
+            border-bottom: 1px solid #EDF2F7;
+        }
+
+        .data-table th {
+            background: #F8F9FB;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .editable-cell {
+            background: #F9FAFC;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .editable-cell:hover {
+            background: #F1F5F9;
+        }
+
+        .number-input {
+            text-align: right;
+            padding-right: 8px;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .valid { background: var(--success-color); }
+        .invalid { background: var(--danger-color); }
+
+        .delete-btn {
+            padding: 0.3rem 0.8rem;
+            border: 1px solid #FFE5E5;
+            border-radius: 20px;
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--danger-color);
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .error-msg {
+            color: var(--danger-color);
+            font-size: 0.9em;
+        }
+    </style>
+   </head>
+<body>
+<div style="margin-bottom: 20px;">
+        <a href="../index.html">
+            <button style="padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                ← 返回主页
+            </button>
+        </a>
+    </div>    <div class="dashboard">
+        <div class="header">
+            <h1>📈 订单审计管理系统</h1>
+        </div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <label>订单编号</label>
+                <input type="text" id="orderId" placeholder="输入订单号">
+            </div>
+            
+            <div class="input-group">
+                <label>审计内容</label>
+                <textarea id="textInput" placeholder="示例：兜底出票价1860.5，收回1420.0，差价440.5"></textarea>
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <button class="btn btn-primary" onclick="handleSubmit()">提交审计</button>
+            <button class="btn btn-export" onclick="exportExcel()">导出报表</button>
+            <button class="btn btn-reset" onclick="clearAll()">重置系统</button>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>订单号</th>
+                    <th>兜底票新票总价</th>
+                    <th>订单收款金额</th>
+                    <th>赔付金额</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+   <script src="../scripts/xlsx.full.min.js"></script>
+    <script>
+        let records = [];
+        let hasExported = true;
+
+        // 页面关闭提示
+        window.addEventListener('beforeunload', (event) => {
+            if (!hasExported && records.length > 0) {
+                event.preventDefault();
+                event.returnValue = '您有未导出的数据，确定要离开吗？';
+            }
+        });
+
+        function handleSubmit() {
+            const orderId = document.getElementById('orderId').value.trim();
+            const text = document.getElementById('textInput').value.trim();
+
+            if (!orderId) return alert("请输入订单号");
+
+            const record = text ? parseText(orderId, text) : createManualRecord(orderId);
+            records.push(record);
+            hasExported = false;
+            
+            updateTable();
+            clearInputs();
+        }
+
+        function parseText(orderId, text) {
+            const getNum = pattern => {
+                const match = text.match(pattern);
+                return match ? parseFloat(match[1]) : 0;
+            };
+            
+            const record = {
+                orderId,
+                newTicket: getNum(/兜底出票价([\d.]+)/),
+                receive: getNum(/收回([\d.]+)/),
+                compensation: getNum(/差价([\d.]+)/),
+                isManual: false
+            };
+            validateRecord(record);
+            return record;
+        }
+
+        function createManualRecord(orderId) {
+            return {
+                orderId,
+                newTicket: null,
+                receive: null,
+                compensation: null,
+                isManual: true
+            };
+        }
+
+        function validateRecord(record) {
+            const amountValid = !record.isManual || (record.newTicket > 0);
+            const diffValid = Math.abs(record.newTicket - record.receive - record.compensation) < 0.1;
+            record.isValid = amountValid && diffValid;
+            record.invalidReason = !amountValid ? '新票总价不可为0' : 
+                                 !diffValid ? '金额差额不匹配' : '';
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = records.map((record, index) => {
+                validateRecord(record);
+                return `
+                    <tr ${!record.isValid ? 'style="background: #FFF5F5"' : ''}>
+                        <td>${record.orderId}</td>
+                        <td ${getEditableCell('newTicket', record)}>${formatValue(record.newTicket)}</td>
+                        <td ${getEditableCell('receive', record)}>${formatValue(record.receive)}</td>
+                        <td class="number-input">${formatValue(record.compensation)}</td>
+                        <td>
+                            <span class="status-dot ${record.isValid ? 'valid' : 'invalid'}"></span>
+                            ${record.isValid ? '正常' : `<span class="error-msg">${record.invalidReason}</span>`}
+                        </td>
+                        <td><button class="delete-btn" onclick="deleteRecord(${index})">删除</button></td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.querySelectorAll('.editable-cell').forEach(cell => {
+                cell.addEventListener('input', e => handleEdit(e, cell.closest('tr').rowIndex - 1));
+            });
+        }
+
+        function getEditableCell(field, record) {
+            if (!record.isManual) return 'class="number-input"';
+            return `class="editable-cell number-input" contenteditable="true" data-field="${field}"`;
+        }
+
+        function formatValue(value) {
+            if (value === null) return '<span style="color:#999">未填写</span>';
+            return value.toLocaleString('zh-CN', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            });
+        }
+
+        function handleEdit(event, index) {
+            const field = event.target.dataset.field;
+            let inputText = event.target.textContent;
+            
+            // 输入验证
+            if (!/^[0-9]*\.?[0-9]{0,1}$/.test(inputText)) {
+                event.target.textContent = formatValue(records[index][field] || '');
+                return;
+            }
+
+            const value = parseFloat(inputText) || 0;
+            
+            if (field === 'newTicket') {
+                if (value <= 0) {
+                    event.target.textContent = '';
+                    records[index][field] = null;
+                    updateTable();
+                    return;
+                }
+                records[index].receive = value;
+                records[index].compensation = 0;
+            } 
+            else if (field === 'receive') {
+                records[index].compensation = records[index].newTicket - value;
+            }
+
+            records[index][field] = value;
+            hasExported = false;
+            validateRecord(records[index]);
+            updateTable();
+        }
+
+        function deleteRecord(index) {
+            if (confirm('确认删除此记录？')) {
+                records.splice(index, 1);
+                hasExported = false;
+                updateTable();
+            }
+        }
+
+        function clearInputs() {
+            document.getElementById('orderId').value = '';
+            document.getElementById('textInput').value = '';
+        }
+
+        function clearAll() {
+            if (records.length && confirm('确认清空所有数据？')) {
+                records = [];
+                hasExported = true;
+                updateTable();
+            }
+        }
+
+        function exportExcel() {
+            if (!records.length) return alert("无数据可导出");
+            
+            const ws = XLSX.utils.json_to_sheet(records.map(r => ({
+                "订单号": r.orderId,
+                "兜底票新票总价": r.newTicket || 0,
+                "订单收款金额": r.receive || 0,
+                "赔付金额": r.compensation || 0
+                            })));
+            
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "审计数据");
+            XLSX.writeFile(wb, `订单审计_${new Date().toISOString().slice(0,10)}.xlsx`);
+            hasExported = true;
+        }
+    </script>
+</body>
+</html>

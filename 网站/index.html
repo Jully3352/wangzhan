@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>综合业务管理系统</title>
+    <!-- Font Awesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            padding: 1rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            color: #3498db;
+            margin-bottom: 1.5rem;
+        }
+
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .card p {
+            color: #7f8c8d;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            .header h1 {
+                font-size: 2rem;
+            }
+            .card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-rocket"></i> 综合业务管理系统</h1>
+            <p>一站式解决方案 | 本地离线使用</p>
+        </div>
+
+        <div class="grid">
+            <!-- 数据对比系统 -->
+            <a href="pages/compare.html" class="card">
+                <div class="card-icon">
+                    <i class="fas fa-file-excel"></i>
+                </div>
+                <h3>数据对比检验</h3>
+                <p>Excel文件差异分析，支持金额核对与异常检测</p>
+            </a>
+
+            <!-- 订单审计系统 -->
+            <a href="pages/audit.html" class="card">
+                <div class="card-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <h3>订单审计管理</h3>
+                <p>兜底票务核验、差价计算与审计报表生成</p>
+            </a>
+
+            <!-- 行程单生成 -->
+            <a href="pages/itinerary.html" class="card">
+                <div class="card-icon">
+                    <i class="fas fa-plane"></i>
+                </div>
+                <h3>行程单生成器</h3>
+                <p>国际机票行程单制作，支持多乘客/多航段</p>
+            </a>
+
+            <!-- 民航指令生成 -->
+            <a href="pages/aviation.html" class="card">
+                <div class="card-icon">
+                    <i class="fas fa-passport"></i>
+                </div>
+                <h3>民航指令生成</h3>
+                <p>支持身份证/护照双模式，自动生成民航指令</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
